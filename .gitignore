@@ -1,0 +1,12 @@
+build/
+build-*/
+*.o
+*.a
+*.so
+.cache/
+compile_commands.json
+.vscode/
+.idea/
+*.log
+perf.data*
+flamegraph.svg
