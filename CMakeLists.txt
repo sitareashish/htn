@@ -21,9 +21,23 @@ add_compile_options(
     -D_GNU_SOURCE
 )
 
-add_executable(htn
-    src/main.c
-)
-target_include_directories(htn PRIVATE include)
+# Custom sanitizer build type: cmake -DCMAKE_BUILD_TYPE=Asan ...
+if(CMAKE_BUILD_TYPE STREQUAL "Asan")
+    add_compile_options(-O1 -g -fno-omit-frame-pointer
+                        -fsanitize=address,undefined)
+    add_link_options(-fsanitize=address,undefined)
+endif()
 
-enable_testing()
+# ---------- Static library (reused by exe and tests) ----------
+add_library(htn_lib STATIC
+    src/log.c
+    src/net.c
+    src/server.c
+)
+target_include_directories(htn_lib PUBLIC include)
+
+# ---------- Server executable ----------
+add_executable(htn src/main.c)
+target_link_libraries(htn PRIVATE htn_lib)
+
+# ---------- Tests wired up in section 3 ----------
