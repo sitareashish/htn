@@ -88,3 +88,21 @@ int worker_pin_to_core(int core) {
     CPU_SET(core, &set);
     return pthread_setaffinity_np(pthread_self(), sizeof set, &set);
 }
+
+#include "htn/hdr.h"
+
+/* Merge every worker's metrics into *out. Read-only over workers; safe to
+ * call from another thread with acceptable staleness. */
+void workers_snapshot(worker_t *ws, int n, worker_metrics *out) {
+    hdr_reset(&out->latency);
+    out->requests = out->bytes_in = out->bytes_out = 0;
+    out->accepts = out->closes = 0;
+    for (int i = 0; i < n; ++i) {
+        hdr_merge(&out->latency, &ws[i].m.latency);
+        out->requests  += ws[i].m.requests;
+        out->bytes_in  += ws[i].m.bytes_in;
+        out->bytes_out += ws[i].m.bytes_out;
+        out->accepts   += ws[i].m.accepts;
+        out->closes    += ws[i].m.closes;
+    }
+}
