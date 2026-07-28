@@ -78,3 +78,13 @@ void worker_destroy(worker_t *w) {
     if (w->wakefd >= 0) close(w->wakefd);
     if (w->epfd   >= 0) close(w->epfd);
 }
+
+#include <sched.h>
+
+/* Pin the calling thread to a single CPU core. Returns 0 / -1. */
+int worker_pin_to_core(int core) {
+    cpu_set_t set;
+    CPU_ZERO(&set);
+    CPU_SET(core, &set);
+    return pthread_setaffinity_np(pthread_self(), sizeof set, &set);
+}
