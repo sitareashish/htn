@@ -2,11 +2,11 @@
 #include "htn/net.h"
 
 #include <arpa/inet.h>
+#include <fcntl.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
-/* Ask the kernel which port a listening fd was bound to. */
 static uint16_t port_of(int fd) {
     struct sockaddr_in addr;
     socklen_t len = sizeof addr;
@@ -15,7 +15,6 @@ static uint16_t port_of(int fd) {
     return ntohs(addr.sin_port);
 }
 
-/* Port 0 = kernel picks a free ephemeral port. */
 static MunitResult test_listen_ephemeral(const MunitParameter params[], void *fixture) {
     (void)params; (void)fixture;
     int fd = net_make_listen_socket(0);
@@ -25,7 +24,6 @@ static MunitResult test_listen_ephemeral(const MunitParameter params[], void *fi
     return MUNIT_OK;
 }
 
-/* Second bind on same port must fail. */
 static MunitResult test_listen_conflict(const MunitParameter params[], void *fixture) {
     (void)params; (void)fixture;
     int a = net_make_listen_socket(0);
@@ -37,9 +35,36 @@ static MunitResult test_listen_conflict(const MunitParameter params[], void *fix
     return MUNIT_OK;
 }
 
+/* net_set_nonblocking must actually set O_NONBLOCK. */
+static MunitResult test_nonblocking_flag(const MunitParameter params[], void *fixture) {
+    (void)params; (void)fixture;
+    int fd = net_make_listen_socket(0);
+    munit_assert_int(fd, >=, 0);
+    munit_assert_int(net_set_nonblocking(fd), ==, 0);
+    int flags = fcntl(fd, F_GETFL, 0);
+    munit_assert_int(flags & O_NONBLOCK, !=, 0);
+    close(fd);
+    return MUNIT_OK;
+}
+
+/* A nonblocking accept on an idle listener returns EAGAIN, not a hang. */
+static MunitResult test_accept_eagain(const MunitParameter params[], void *fixture) {
+    (void)params; (void)fixture;
+    int fd = net_make_listen_socket(0);
+    munit_assert_int(fd, >=, 0);
+    munit_assert_int(net_set_nonblocking(fd), ==, 0);
+    int c = accept(fd, NULL, NULL);
+    munit_assert_int(c, ==, -1);
+    munit_assert_true(errno == EAGAIN || errno == EWOULDBLOCK);
+    close(fd);
+    return MUNIT_OK;
+}
+
 static MunitTest tests[] = {
     { "/listen_ephemeral", test_listen_ephemeral, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
     { "/listen_conflict",  test_listen_conflict,  NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+    { "/nonblocking_flag", test_nonblocking_flag, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+    { "/accept_eagain",    test_accept_eagain,    NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
     { NULL, NULL, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 };
 

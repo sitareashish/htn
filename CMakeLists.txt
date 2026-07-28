@@ -41,7 +41,3 @@ add_executable(htn src/main.c)
 target_link_libraries(htn PRIVATE htn_lib)
 
 # ---------- Tests wired up in section 3 ----------
-
-# ---------- Tests ----------
-enable_testing()
-add_subdirectory(tests)
