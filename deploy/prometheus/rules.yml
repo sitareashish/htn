@@ -1,0 +1,10 @@
+groups:
+  - name: htn.rules
+    rules:
+      - alert: HTNHighP99
+        expr: htn_request_latency_seconds{quantile="0.99"} > 0.002
+        for: 1m
+        labels: { severity: warning }
+        annotations:
+          summary: "HTN p99 latency above 2ms"
+          description: "p99 = {{ $value }}s for over 1 minute."

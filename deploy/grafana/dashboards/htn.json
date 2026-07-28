@@ -1,0 +1,39 @@
+{
+  "title": "HTN Server",
+  "uid": "htn-main",
+  "schemaVersion": 39,
+  "time": { "from": "now-15m", "to": "now" },
+  "refresh": "5s",
+  "panels": [
+    {
+      "type": "timeseries", "title": "Requests/sec",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [ { "expr": "rate(htn_requests_total[1m])", "legendFormat": "rps" } ]
+    },
+    {
+      "type": "timeseries", "title": "Latency (s)",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        { "expr": "htn_request_latency_seconds{quantile=\"0.5\"}",  "legendFormat": "p50" },
+        { "expr": "htn_request_latency_seconds{quantile=\"0.99\"}", "legendFormat": "p99" },
+        { "expr": "htn_request_latency_seconds{quantile=\"0.999\"}","legendFormat": "p99.9" }
+      ]
+    },
+    {
+      "type": "timeseries", "title": "Connections",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        { "expr": "rate(htn_connections_accepted_total[1m])", "legendFormat": "accept/s" },
+        { "expr": "rate(htn_connections_closed_total[1m])",   "legendFormat": "close/s" }
+      ]
+    },
+    {
+      "type": "timeseries", "title": "Throughput (bytes/s)",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        { "expr": "rate(htn_bytes_in_total[1m])",  "legendFormat": "in" },
+        { "expr": "rate(htn_bytes_out_total[1m])", "legendFormat": "out" }
+      ]
+    }
+  ]
+}
